@@ -22,6 +22,7 @@ PageTurn = namedtuple('PageTurn', ['slug', 'page', 'choice'])
 Picture = namedtuple('Picture', ['pt', 'pb', 'pl', 'pr'])
 Text = namedtuple('Text', ['tt','tb','tl','tr'])
 user = str(win32net.NetUserGetInfo(None, win32api.GetUserName(),1)['name'])
+path = os.getcwd()
 
 eyetrack_on = False # Determines if EyeTracker is recording SampleGaze and SampleFixation
 data_saved = False # Determines if you've reached End of Book and have saved all content
@@ -289,6 +290,7 @@ class Server(Thread):
 ## MAIN ##################################################################
 
 answer = eg.buttonbox(msg="Ready to Start?", choices=["Yes","No"])
+print(path)
 if answer == "Yes":
     iexplorer, app, tw, window, address_bar = OpenPrograms()
     def handle_data(data):
