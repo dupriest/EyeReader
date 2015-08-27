@@ -35,7 +35,10 @@ funcQ = Queue.Queue() # Handles 'events' from the three threads marked in Main
 ## 1 ##
 def OpenPrograms():
     """Starts Tobii Gaze Viewer and Internet Explorer with Tarheel Reader."""
-    app = Application.start("C:\\Program Files (x86)\\Tobii Dynavox\\Gaze Viewer\\Tobii.GazeViewer.Startup.exe") # Start Tobii GazeViewer
+    try:
+        app = Application().connect_(path="C:\\Program Files (x86)\\Tobii Dynavox\\Gaze Viewer\\Tobii.GazeViewer.Startup.exe")
+    except pywinauto.application.ProcessNotFoundError:
+        app = Application.start("C:\\Program Files (x86)\\Tobii Dynavox\\Gaze Viewer\\Tobii.GazeViewer.Startup.exe")
     tw = app.Window_().Wait('visible', timeout=60, retry_interval=0.1)
     tw.Minimize() # ADDED
     iexplorer = Application.start('C:\Program Files\Internet Explorer\iexplore.exe') # Start iexplorer
