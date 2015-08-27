@@ -21,7 +21,6 @@ from threading import Timer, Thread
 PageTurn = namedtuple('PageTurn', ['slug', 'page', 'choice'])
 Picture = namedtuple('Picture', ['pt', 'pb', 'pl', 'pr'])
 Text = namedtuple('Text', ['tt','tb','tl','tr'])
-user = str(win32net.NetUserGetInfo(None, win32api.GetUserName(),1)['name'])
 path = os.getcwd()
 
 eyetrack_on = False # Determines if EyeTracker is recording SampleGaze and SampleFixation
@@ -112,7 +111,7 @@ def SaveData(datetime, timeout):
             data.append(d)
     if timeout:
         suffix = '_timeout'
-    filename = "C:\\Users\\" + user + "\\Dropbox\\" + user + "\\Minimal EyeReader\\data\\eyegazedata_" + datetime.strftime('%Y-%m-%d-%H-%M-%S') + suffix + '.json'
+    filename = path +"\\data\\eyegazedata_" + datetime.strftime('%Y-%m-%d-%H-%M-%S') + suffix + '.json'
     json.dump(data, file(filename, 'w'))
 
 ## 3 ##
@@ -149,11 +148,11 @@ def SaveVid(datetime, timeout):
         w = app.Windows_()
     tw2.SetFocus()
 
-    date = datetime.strftime('%Y-%m-%d-%H-%M-%S')
+    date = path + "\\videos\\" + 'eyex_' + datetime.strftime('%Y-%m-%d-%H-%M-%S')
     d = ""
     for char in date:
         d = d + "{" + char + "}"
-    filename = "{BACK}{e}{y}{e}{x}{_}" + d
+    filename = "{BACK}" + d
     if timeout == True:
         filename = filename + "{_}{t}{i}{m}{e}{o}{u}{t}"
         date = date + "_timeout"
@@ -162,8 +161,7 @@ def SaveVid(datetime, timeout):
     tw2.TypeKeys("{ENTER}")
     time.sleep(1)
     tw1.SetFocus()
-    filename = "C:\\Users\\" + user + "\\Dropbox\\" + user + "\\Minimal EyeReader\\videos\\" + 'eyex_' + date + '.mp4' # ADDED
-    #filename = "C:\\Users\\" + user + "\\Videos\\Gaze Viewer\\" + "eyex_" + date + ".mp4"
+    filename = date + '.mp4'
     print('Before filename loop')
     while os.path.isfile(filename) == False: # Waits for video to exist before trying to exit
         time.sleep(0.1)
@@ -290,7 +288,7 @@ class Server(Thread):
 ## MAIN ##################################################################
 
 answer = eg.buttonbox(msg="Ready to Start?", choices=["Yes","No"])
-print(path)
+
 if answer == "Yes":
     iexplorer, app, tw, window, address_bar = OpenPrograms()
     def handle_data(data):
