@@ -6,6 +6,7 @@ from datetime import datetime
 from eyex.api import EyeXInterface, SampleGaze, SampleFixation
 from pywinauto import Application
 import Queue
+import webbrowser
 from collections import namedtuple
 import pywinauto
 from pywinauto import Application
@@ -26,6 +27,8 @@ path = os.getcwd()
 eyetrack_on = False # Determines if EyeTracker is recording SampleGaze and SampleFixation
 data_saved = False # Determines if you've reached End of Book and have saved all content
 t_length = 120.0 # How long the program waits until it does a timeout save on a page
+t0 = 0 # Time when video started
+ttime = 0 # Total length of the video
 
 alldata = Queue.Queue() # Holds SampleGaze and SampleFixation data taken from Tobii EyeGo
 funcQ = Queue.Queue() # Handles 'events' from the three threads marked in Main
@@ -35,29 +38,30 @@ funcQ = Queue.Queue() # Handles 'events' from the three threads marked in Main
 ## 1 ##
 def OpenPrograms():
     """Starts Tobii Gaze Viewer and Internet Explorer with Tarheel Reader."""
-    try:
+    try: # Connect/start Tobii Gaze Viewer regardless if its already running or not
         app = Application().connect_(path="C:\\Program Files (x86)\\Tobii Dynavox\\Gaze Viewer\\Tobii.GazeViewer.Startup.exe")
     except pywinauto.application.ProcessNotFoundError:
         app = Application.start("C:\\Program Files (x86)\\Tobii Dynavox\\Gaze Viewer\\Tobii.GazeViewer.Startup.exe")
     tw = app.Window_().Wait('visible', timeout=60, retry_interval=0.1)
-    tw.Minimize() # ADDED
-    iexplorer = Application.start('C:\Program Files\Internet Explorer\iexplore.exe') # Start iexplorer
-    w_handle = pywinauto.findwindows.find_windows(title=u'MSN.com - Hotmail, Outlook, Skype, Bing, Latest News, Photos & Videos - Internet Explorer', class_name='IEFrame')
+    tw.Minimize()
+    webbrowser.open('http://gbserver3.cs.unc.edu/favorites/?voice=silent&pageColor=fff&textColor=000&fpage=1&favorites=94348,97375,94147,91140&eyetracker=1') # Start iexplorer
+    n = 0
+    while n == 0:
+        n = 1
+        try:
+            iexplorer = Application().connect_(path='C:\Program Files\Internet Explorer\iexplore.exe')
+        except pywinauto.application.ProcessNotFoundError:
+            n = 0
+    w_handle = pywinauto.findwindows.find_windows(title_re="Tar Heel")
     while not w_handle:
         time.sleep(0.1)
-        w_handle = pywinauto.findwindows.find_windows(title=u'MSN.com - Hotmail, Outlook, Skype, Bing, Latest News, Photos & Videos - Internet Explorer', class_name='IEFrame')
+        w_handle = pywinauto.findwindows.find_windows(title_re="Tar Heel")
     w_handle = w_handle[0]
     window = iexplorer.window_(handle=w_handle)
-    window.Maximize()
-    address_bar = window['5']
-    address_bar.Click()
-    address_bar.TypeKeys('{BACK}')
-    address_bar.TypeKeys('http://gbserver3.cs.unc.edu/favorites/?voice=silent&pageColor=fff&textColor=000&fpage=1&favorites=94348,97375,94147,91140&eyetracker=1')
-    address_bar.TypeKeys('{ENTER}')
     time.sleep(1)
     window.SetFocus()
     window.TypeKeys('{F11}')
-    return [iexplorer, app, tw, window, address_bar]
+    return [iexplorer, app, tw, window]
 
 ## 2 ##
 def SaveData(datetime, timeout):
@@ -181,13 +185,8 @@ def SaveVid(datetime, timeout):
     if timeout == True:
         eg.msgbox(msg="Saving complete upon timeout. To restart recording, start a new book.", ok_button="Read Another Book")
         window.TypeKeys('{F11}')
-        a = window['6']
-        a.SetFocus()
-        a.Click(coords=(100,0))
         time.sleep(0.1)
-        a.TypeKeys('{BACK}')
-        a.TypeKeys('http://gbserver3.cs.unc.edu/favorites/?voice=silent&pageColor=fff&textColor=000&fpage=1&favorites=94348,97375,94147,91140&eyetracker=1')
-        a.TypeKeys('{ENTER}')
+        webbrowser.open('http://gbserver3.cs.unc.edu/favorites/?voice=silent&pageColor=fff&textColor=000&fpage=1&favorites=94348,97375,94147,91140&eyetracker=1')
         time.sleep(1)
         window.TypeKeys('{F11}')
     else:
@@ -224,6 +223,8 @@ class Logger(WebSocket):
         global eyetrack_on
         global data_saved
         global timer
+        global t0
+        global ttime
         print ('got', query)
         print ('choice is type ', query['choice'])
         print('')
@@ -232,8 +233,10 @@ class Logger(WebSocket):
         if int(query['page']) == 1: # Resets data_saved upon the start of a new book
             data_saved = False
             timer.start()
+            t0 = time.time()
         if choice == True and data_saved == False:
             timer.cancel()
+            ttime = time.time() - t0
             tw.TypeKeys("{F7}")
             eyetrack_on = False
             data_saved = True # Prevents rate pages still considered part of the book from causing trouble afterwards
@@ -283,9 +286,9 @@ class Server(Thread):
         """Function called upon Ctrl+C that kills the program"""
         print ("closing")
         self.server.close()
-        app.kill_()
-        iexplorer.kill_()
-        sys.exit()
+        #app.kill_()
+        #iexplorer.kill_()
+        #sys.exit()
 
 
 ## MAIN ##################################################################
@@ -293,7 +296,7 @@ class Server(Thread):
 answer = eg.buttonbox(msg="Ready to Start?", choices=["Yes","No"])
 
 if answer == "Yes":
-    iexplorer, app, tw, window, address_bar = OpenPrograms()
+    iexplorer, app, tw, window = OpenPrograms()
     def handle_data(data):
         """Function called to handle EyeX SampleGaze and SampleFixation events"""
         global eyetrack_on
