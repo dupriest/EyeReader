@@ -23,7 +23,8 @@ PageTurn = namedtuple('PageTurn', ['slug', 'page', 'choice'])
 Picture = namedtuple('Picture', ['pt', 'pb', 'pl', 'pr'])
 Text = namedtuple('Text', ['tt','tb','tl','tr'])
 path = os.getcwd()
-
+if path[-14:-1] == '\\program file':
+    path = path[0:len(path)-14]
 eyetrack_on = False # Determines if EyeTracker is recording SampleGaze and SampleFixation
 data_saved = False # Determines if you've reached End of Book and have saved all content
 t_length = 120.0 # How long the program waits until it does a timeout save on a page
