@@ -131,7 +131,8 @@ def SaveVid(datetime, timeout):
     tw2 - popup for naming video/file explorer."""
     global timer
     global addres_bar
-    eg.msgbox(msg="The video of this book reading will now be saved. While saving, please refrain from moving the cursor.  Click the button below to continue.", title="START VIDEO SAVING", ok_button="Start")
+    global ttime
+    eg.msgbox(msg="The video of this book reading will now be saved. While saving, please refrain from moving the cursor.  Click the button below to continue.", title="TAR HEEL READER - START VIDEO SAVING", ok_button="Start")
     time.sleep(1)
     window.Minimize()
     time.sleep(0.5)
@@ -183,14 +184,14 @@ def SaveVid(datetime, timeout):
     window.Maximize()
     window.SetFocus()
     if timeout == True:
-        eg.msgbox(msg="Saving complete upon timeout. To restart recording, start a new book.", ok_button="Read Another Book")
+        eg.msgbox(msg="Saving complete upon timeout. To restart recording, start a new book.", title="TAR HEEL READER - SAVING COMPLETE TIMEOUT", ok_button="Read Another Book")
         window.TypeKeys('{F11}')
         time.sleep(0.1)
         webbrowser.open('http://gbserver3.cs.unc.edu/favorites/?voice=silent&pageColor=fff&textColor=000&fpage=1&favorites=94348,97375,94147,91140&eyetracker=1')
         time.sleep(1)
         window.TypeKeys('{F11}')
     else:
-	    eg.msgbox(msg="Saving complete!", title="SAVING COMPLETE", ok_button="Continue")
+	    eg.msgbox(msg="Saving complete!", title="TAR HEEL READER - SAVING COMPLETE", ok_button="Continue")
     timer = threading.Timer(t_length, timeoutHandler)
 
 ## 4 ##
