@@ -133,7 +133,8 @@ def SaveData(datetime, timeout):
 ## 3 ##
 def SaveVid(datetime, timeout):
     """Saves a video that includes a screen capture, heat map and gaze plot by interacting with
-	Tobii Gaze Viewer.  Videos are stored as mp4 files in 'Videos' -> 'Gaze Viewer'.
+	Tobii Gaze Viewer.  Videos are stored as mp4 files in folder 'videos' in subfolder corresponding
+    to the bookshelf read from.
 
     tw - the original GV window that allows you to start/stop recording.
     tw1 - window that allows you to edit/save the video you've recorded.
@@ -198,7 +199,10 @@ def SaveVid(datetime, timeout):
         eg.msgbox(msg="Saving complete upon timeout. To restart recording, start a new book.", title="TAR HEEL READER - SAVING COMPLETE TIMEOUT", ok_button="Read Another Book")
         window.TypeKeys('{F11}')
         time.sleep(0.1)
-        webbrowser.open('http://gbserver3.cs.unc.edu/favorites/?voice=silent&pageColor=fff&textColor=000&fpage=1&favorites=94348,97375,94147,91140&eyetracker=1')
+        if bookshelf == 'A':
+            webbrowser.open('http://test.tarheelreader.org/favorites/?collection=vap-study-bookshelf-a&eyetracker=1')
+        else:
+            webbrowser.open('http://test.tarheelreader.org/favorites/?collection=vap-study-bookshelf-b&eyetracker=1')
         time.sleep(1)
         window.TypeKeys('{F11}')
     else:
