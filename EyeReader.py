@@ -23,6 +23,7 @@ PageTurn = namedtuple('PageTurn', ['slug', 'page', 'choice'])
 Picture = namedtuple('Picture', ['pt', 'pb', 'pl', 'pr'])
 Text = namedtuple('Text', ['tt','tb','tl','tr'])
 path = os.getcwd()
+bookshelf = open(path + '\\Bookshelf.txt', 'r').read()
 if path[-14:-1] == '\\program file':
     path = path[0:len(path)-14]
 eyetrack_on = False # Determines if EyeTracker is recording SampleGaze and SampleFixation
@@ -33,6 +34,7 @@ ttime = 0 # Total length of the video
 
 alldata = Queue.Queue() # Holds SampleGaze and SampleFixation data taken from Tobii EyeGo
 funcQ = Queue.Queue() # Handles 'events' from the three threads marked in Main
+
 
 # FUNCTION DEFINITION(5) ######################################################################################
 
@@ -45,7 +47,10 @@ def OpenPrograms():
         app = Application.start("C:\\Program Files (x86)\\Tobii Dynavox\\Gaze Viewer\\Tobii.GazeViewer.Startup.exe")
     tw = app.Window_().Wait('visible', timeout=60, retry_interval=0.1)
     tw.Minimize()
-    webbrowser.open('http://gbserver3.cs.unc.edu/favorites/?voice=silent&pageColor=fff&textColor=000&fpage=1&favorites=94348,97375,94147,91140&eyetracker=1') # Start iexplorer
+    if bookshelf == 'A':
+        webbrowser.open('http://test.tarheelreader.org/favorites/?collection=vap-study-bookshelf-a&eyetracker=1')
+    else:
+        webbrowser.open('http://test.tarheelreader.org/favorites/?collection=vap-study-bookshelf-b&eyetracker=1')    
     n = 0
     while n == 0:
         n = 1
@@ -119,7 +124,10 @@ def SaveData(datetime, timeout):
             data.append(d)
     if timeout:
         suffix = '_timeout'
-    filename = path +"\\data\\eyegazedata_" + datetime.strftime('%Y-%m-%d-%H-%M-%S') + suffix + '.json'
+    if bookshelf == 'A':
+        filename = path +"\\data\\Bookshelf A\\eyegazedata_" + datetime.strftime('%Y-%m-%d-%H-%M-%S') + suffix + '.json'
+    else:
+        filename = path +"\\data\\Bookshelf B\\eyegazedata_" + datetime.strftime('%Y-%m-%d-%H-%M-%S') + suffix + '.json'
     json.dump(data, file(filename, 'w'))
 
 ## 3 ##
@@ -156,8 +164,10 @@ def SaveVid(datetime, timeout):
                 break
         w = app.Windows_()
     tw2.SetFocus()
-
-    date = path + "\\videos\\" + 'eyex_' + datetime.strftime('%Y-%m-%d-%H-%M-%S')
+    if bookshelf == 'A':
+        date = path + "\\videos\\Bookshelf A\\" + 'eyex_' + datetime.strftime('%Y-%m-%d-%H-%M-%S')
+    else:
+        date = path + "\\videos\\Bookshelf B\\" + 'eyex_' + datetime.strftime('%Y-%m-%d-%H-%M-%S')
     d = ""
     for char in date:
         d = d + "{" + char + "}"
