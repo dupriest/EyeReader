@@ -150,7 +150,7 @@ def SaveVid(datetime, timeout):
     tw1 = tw
     while tw1 == tw:
         for i,d in enumerate(w):
-            if d.IsVisible():
+            if d.IsVisible() and d.IsEnabled():
                 tw1 = w[i]
         w = app.Windows_()
 	tw1.Maximize()
@@ -160,7 +160,7 @@ def SaveVid(datetime, timeout):
     tw2 = tw1
     while tw2 == tw1:
         for i,d in enumerate(w):
-            if d.IsVisible():
+            if d.IsVisible() and d.IsEnabled():
                 tw2 = w[i]
                 break
         w = app.Windows_()
