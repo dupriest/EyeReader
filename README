@@ -1,1 +1,9 @@
-Unofficial, incomplete Python bindings for the Tobii EyeX C/C++ API.
+EyeReader v1.5
+
+A python implementation for automation of saving video and coordinate data from the Tobii EyeGo.  Video data is taken by interacting with Tobii Dynavox Gaze Viewer, while the implementation for getting coordinate data is a variation of python-eyex (repository of MichaelMauderer). Specifically designed to capture data while reading a book on Tar Heel Reader.
+
+Notes:
+
+Made for screen resolution of 1920 x 1080; not guarenteed to work for other screen resolutions
+Made for Windows 7 64bit operating system; untested on others
+Opens Tar Heel Reader in default browser of the user

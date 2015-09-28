@@ -45,7 +45,6 @@ funcQ = Queue.Queue()   # Handles 'events' from the three threads marked in Main
 def OpenPrograms():
     """Starts Tobii Dynavox Gaze Viewer and Internet Explorer with Tarheel Reader.
     
-    iexplorer - the pywinauto Application associated with IE
     app - the pywinauto Application associated with Tobii Dynavox Gaze Viewer
     tw - main window of app upon startup
     window - main window of IE upon startup"""
@@ -60,23 +59,14 @@ def OpenPrograms():
         webbrowser.open('http://test.tarheelreader.org/favorites/?collection=vap-study-bookshelf-a&eyetracker=1')
     else:
         webbrowser.open('http://test.tarheelreader.org/favorites/?collection=vap-study-bookshelf-b&eyetracker=1')    
-    n = 0
-    while n == 0:
-        n = 1
-        try:
-            iexplorer = Application().connect_(path='C:\Program Files\Internet Explorer\iexplore.exe')
-        except pywinauto.application.ProcessNotFoundError:
-            n = 0
-    w_handle = pywinauto.findwindows.find_windows(title_re="Tar Heel")
-    while not w_handle:
-        time.sleep(0.1)
-        w_handle = pywinauto.findwindows.find_windows(title_re="Tar Heel")
-    w_handle = w_handle[0]
-    window = iexplorer.window_(handle=w_handle)
+    c = pywinauto.findwindows.find_windows(title_re="Tar Heel Reader|Favorites")
+    while len(c) == 0:
+        c = pywinauto.findwindows.find_windows(title_re="Tar Heel Reader|Favorites")
+    window = pywinauto.controls.HwndWrapper.HwndWrapper(c[0])
     time.sleep(1)
     window.SetFocus()
     window.TypeKeys('{F11}')
-    return [iexplorer, app, tw, window]
+    return [app, tw, window]
 
 ## 2 ##
 def SaveData(datetime, timeout):
@@ -314,7 +304,6 @@ class Server(Thread):
         print ("closing")
         self.server.close()
         #app.kill_()
-        #iexplorer.kill_()
         #sys.exit()
 
 
@@ -323,7 +312,7 @@ class Server(Thread):
 answer = eg.buttonbox(msg="Ready to Start?", choices=["Yes","No"])
 
 if answer == "Yes":
-    iexplorer, app, tw, window = OpenPrograms()
+    app, tw, window = OpenPrograms()
     
     def handle_data(data):
         """Function called to handle EyeX SampleGaze and SampleFixation events"""
