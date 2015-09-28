@@ -19,28 +19,37 @@ import easygui as eg
 import threading
 from threading import Timer, Thread
 
+# NAMED TUPLES ###############################################################################################
+
 PageTurn = namedtuple('PageTurn', ['slug', 'page', 'choice'])
 Picture = namedtuple('Picture', ['pt', 'pb', 'pl', 'pr'])
 Text = namedtuple('Text', ['tt','tb','tl','tr'])
-path = os.getcwd()
-bookshelf = open(path + '\\Bookshelf.txt', 'r').read()
-if path[-14:-1] == '\\program file':
+
+# GLOBAL VARIABLES ###########################################################################################
+
+path = os.getcwd()      # Return program start in path
+bookshelf = open(path + '\\Bookshelf.txt', 'r').read() # Opens Bookshelf.txt
+if path[-14:-1] == '\\program file': # path goes up a level from program files folder
     path = path[0:len(path)-14]
-eyetrack_on = False # Determines if EyeTracker is recording SampleGaze and SampleFixation
-data_saved = False # Determines if you've reached End of Book and have saved all content
-t_length = 120.0 # How long the program waits until it does a timeout save on a page
-t0 = 0 # Time when video started
-ttime = 0 # Total length of the video
+
+eyetrack_on = False     # True: Tobii EyeGo is recording data, False: Tobii EyeGo is not recording data
+data_saved = False      # Determines if you've reached end of book and have saved all content (vdieo, data)
+t_length = 120.0        # How long the program waits until it does a timeout save on a page
 
 alldata = Queue.Queue() # Holds SampleGaze and SampleFixation data taken from Tobii EyeGo
-funcQ = Queue.Queue() # Handles 'events' from the three threads marked in Main
+funcQ = Queue.Queue()   # Handles 'events' from the three threads marked in Main
 
-
-# FUNCTION DEFINITION(5) ######################################################################################
+# FUNCTION DEFINITION(5) #####################################################################################
 
 ## 1 ##
 def OpenPrograms():
-    """Starts Tobii Gaze Viewer and Internet Explorer with Tarheel Reader."""
+    """Starts Tobii Dynavox Gaze Viewer and Internet Explorer with Tarheel Reader.
+    
+    iexplorer - the pywinauto Application associated with IE
+    app - the pywinauto Application associated with Tobii Dynavox Gaze Viewer
+    tw - main window of app upon startup
+    window - main window of IE upon startup"""
+
     try: # Connect/start Tobii Gaze Viewer regardless if its already running or not
         app = Application().connect_(path="C:\\Program Files (x86)\\Tobii Dynavox\\Gaze Viewer\\Tobii.GazeViewer.Startup.exe")
     except pywinauto.application.ProcessNotFoundError:
@@ -73,8 +82,10 @@ def OpenPrograms():
 def SaveData(datetime, timeout):
     """Empties contents of queue (SampleGaze and SampleFixation points, PageTurn, Picture and
 	Text namedtuples) into a json file in the folder 'data'."""
+
     data = []
     suffix = ''
+
     while True:
         try:
             r = alldata.get(False)
@@ -139,22 +150,23 @@ def SaveVid(datetime, timeout):
     tw - the original GV window that allows you to start/stop recording.
     tw1 - window that allows you to edit/save the video you've recorded.
     tw2 - popup for naming video/file explorer."""
+
     global timer
     global addres_bar
-    global ttime
+
     eg.msgbox(msg="The video of this book reading will now be saved. While saving, please refrain from moving the cursor.  Click the button below to continue.", title="TAR HEEL READER - START VIDEO SAVING", ok_button="Start")
     time.sleep(1)
     window.Minimize()
     time.sleep(0.5)
     w = app.Windows_()
     tw1 = tw
-    while tw1 == tw:
+    while tw1 == tw: # Common way this program attempts to switch to a newly appeared window by waiting for it to be visible and enabled
         for i,d in enumerate(w):
             if d.IsVisible() and d.IsEnabled():
                 tw1 = w[i]
         w = app.Windows_()
 	tw1.Maximize()
-    tw1.ClickInput(coords=(1700,65))
+    tw1.ClickInput(coords=(1700,65)) # Dependent on screen resolution
     time.sleep(1)
     w = app.Windows_()
     tw2 = tw1
@@ -186,12 +198,12 @@ def SaveVid(datetime, timeout):
     while os.path.isfile(filename) == False: # Waits for video to exist before trying to exit
         time.sleep(0.1)
     time.sleep(5)
-    tw1.ClickInput(coords=(1870, 65)) # Tries to exit, but even if video file exists GazeViewer might still not be done saving
+    tw1.ClickInput(coords=(1870, 65)) # Dependent on screen resolution; tries to exit, but even if video file exists GazeViewer might still not be done saving
     while tw1.IsVisible() and tw.IsVisible() == False:
-        tw1.ClickInput(coords=(1870, 65)) # Exit Button
+        tw1.ClickInput(coords=(1870, 65)) # Dependent on screen resolution; Exit Button
         time.sleep(1)
         if tw1.IsVisible() and tw.IsVisible() == False:
-            tw1.ClickInput(coords=(1100, 570)) # Popup that appears if its not done saving
+            tw1.ClickInput(coords=(1100, 570)) # Depdendent on screen resolution; Popup that appears if its not done saving
     tw.Minimize()
     window.Maximize()
     window.SetFocus()
@@ -212,10 +224,12 @@ def SaveVid(datetime, timeout):
 ## 4 ##
 def timeoutHandler():
     funcQ.put([timeoutHandlerHelper])
+
 ## 5 ##
 def timeoutHandlerHelper():
-    """Function called when timer reaches t_length seconds"""
+    """Function called when timer reaches t_length seconds. Force saves video and data."""
     global eyetrack_on
+
     tw.TypeKeys("{F7}")
     eyetrack_on = False
     data_saved = True
@@ -224,7 +238,7 @@ def timeoutHandlerHelper():
     SaveData(date, True)
 
 
-# CLASS DEFINITION(1) ############################################################################
+# CLASS DEFINITION(2) ##########################################################################################
 
 ## 1 ##
 class Logger(WebSocket):
@@ -239,43 +253,40 @@ class Logger(WebSocket):
         global eyetrack_on
         global data_saved
         global timer
-        global t0
-        global ttime
-        print ('got', query)
-        print ('choice is type ', query['choice'])
-        print('')
+
+        # Optional print statements of query values from Tar Heel Reader
+        #print ('got', query)
+        #print ('choice is type ', query['choice'])
+        #print('')
+
         choice = query['choice']
 
-        if int(query['page']) == 1: # Resets data_saved upon the start of a new book
+        if int(query['page']) == 1: # Resets data_saved upon the start of a new book, start timer
             data_saved = False
             timer.start()
-            t0 = time.time()
-        if choice == True and data_saved == False:
+        if choice == True and data_saved == False: # Executed on last page of a book
             timer.cancel()
-            ttime = time.time() - t0
             tw.TypeKeys("{F7}")
             eyetrack_on = False
             data_saved = True # Prevents rate pages still considered part of the book from causing trouble afterwards
             date = datetime.now()
-            SaveVid(date, False)
-            SaveData(date, False)
-        elif choice == False and data_saved == False:
+            SaveVid(date, False) # See ## 2 ##
+            SaveData(date, False) # See ## 3 ##
+        elif choice == False and data_saved == False: # Executed on any page but the last page
             pt = PageTurn(query['slug'], query['page'], query['choice'])
             pic = Picture(query['pt'], query['pb'], query['pl'], query['pr'])
             text = Text(query['tt'], query['tb'], query['tl'], query['tr'])
             alldata.put(pt)
             alldata.put(pic)
             alldata.put(text)
-            if int(query['page']) != 1:
+            if int(query['page']) != 1: # Reset timer upon reaching new page
                 timer.cancel()
                 timer = Timer(t_length, timeoutHandler)
                 timer.start()
-            if eyetrack_on == False:
+            if eyetrack_on == False: # If recording video isn't on, turn it on
                 tw.SetFocus()
                 tw.TypeKeys("{F7}")
-
-            eyetrack_on = True
-
+            eyetrack_on = True # Turn on data recording
 
     def handleConnected(self):
         """Function called when Web Socket connects to Tar Heel Reader"""
@@ -287,7 +298,7 @@ class Logger(WebSocket):
         print('disconnected')
         pass
 
-## WebSocket Server
+## 2 ##
 class Server(Thread):
     def run(self):
         """Starts the thread for the Web Socket Server"""
@@ -307,12 +318,13 @@ class Server(Thread):
         #sys.exit()
 
 
-## MAIN ##################################################################
+## MAIN ###################################################################################
 
 answer = eg.buttonbox(msg="Ready to Start?", choices=["Yes","No"])
 
 if answer == "Yes":
     iexplorer, app, tw, window = OpenPrograms()
+    
     def handle_data(data):
         """Function called to handle EyeX SampleGaze and SampleFixation events"""
         global eyetrack_on
@@ -333,3 +345,7 @@ if answer == "Yes":
         func = funcQ.get()
         print ('calling', func)
         func[0](*func[1:])
+else:
+    # Program ends and closes
+    pass
+

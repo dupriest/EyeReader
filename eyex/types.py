@@ -23,10 +23,23 @@ TX_FALSE = 0
 TX_RESULT_OK = 2
 
 TX_GAZEPOINTDATAMODE_LIGHTLYFILTERED = 2
+TX_FIXATIONDATAMODE_SENSITIVE = 1
+TX_FIXATIONDATAMODE_SLOW = 2
+
+TX_BEHAVIORTYPE_GAZEPOINTDATA = 1
+TX_BEHAVIORTYPE_EYEPOSITIONDATA = 2
+TX_BEHAVIORTYPE_GAZEAWARE = 3
+TX_BEHAVIORTYPE_ACTIVATABLE = 4
+TX_BEHAVIORTYPE_PANNABLE = 5
+TX_BEHAVIORTYPE_FIXATIONDATA = 6
 
 
 class TX_GAZEPOINTDATAPARAMS(c.Structure):
     _fields_ = [("GazePointDataMode", c.c_int),
+                ]
+
+class TX_FIXATIONDATAPARAMS(c.Structure):
+    _fields_ = [("FixationDataMode", c.c_int),
                 ]
 
 
@@ -37,6 +50,13 @@ class TX_GAZEPOINTDATAEVENTPARAMS(c.Structure):
                 ("y", c.c_double),
                 ]
 
+class TX_FIXATIONDATAEVENTPARAMS(c.Structure):
+    _fields_ = [("FixationDataMode", c.c_int),
+                ("FixationDataEventType", c.c_int),
+                ("timestamp", c.c_double),
+                ("x", c.c_double),
+                ("y", c.c_double),
+                ]
 
 EVENT_HANDLER = c.CFUNCTYPE(None, c.c_void_p, c.c_void_p)
 ON_SNAPSHOT_COMMITTED = c.CFUNCTYPE(None, c.c_void_p, c.c_void_p)

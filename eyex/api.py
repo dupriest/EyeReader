@@ -2,15 +2,17 @@ from collections import namedtuple
 import ctypes as c
 import eyex.types as tx
 
-Sample = namedtuple('Sample', ['data_mode', 'timestamp', 'x', 'y'])
+SampleGaze = namedtuple('SampleGaze', ['data_mode', 'timestamp', 'x', 'y'])
+SampleFixation = namedtuple('SampleFixation', ['data_mode', 'event_type', 'timestamp', 'x', 'y'])
 
 
 class EyeXInterface():
     on_event = []
 
-    def __init__(self, lib_location='Tobii.EyeX.Client.dll'):
+    def __init__(self, lib_location='Tobii.EyeX.Client.dll', fixation=False):
 
         self.eyex_dll = c.cdll.LoadLibrary(lib_location)
+        self.fixation = fixation
 
         self.latest_sample = None
 
@@ -47,13 +49,19 @@ class EyeXInterface():
     def _initialize_interactor_snapshot(self):
         interactor = c.c_voidp()
 
-        params = tx.TX_GAZEPOINTDATAPARAMS(tx.TX_GAZEPOINTDATAMODE_LIGHTLYFILTERED)
+        if self.fixation:
+            params = tx.TX_FIXATIONDATAPARAMS(tx.TX_FIXATIONDATAMODE_SLOW)
+        else:
+            params = tx.TX_GAZEPOINTDATAPARAMS(tx.TX_GAZEPOINTDATAMODE_LIGHTLYFILTERED)
 
         ret = self.eyex_dll.txCreateGlobalInteractorSnapshot(self.context, self.interactor_id,
                                                              c.byref(self.interactor_snapshot),
                                                              c.byref(interactor))
 
-        ret = self.eyex_dll.txCreateGazePointDataBehavior(interactor,  c.byref(params))
+        if self.fixation:
+            ret = self.eyex_dll.txCreateFixationDataBehavior(interactor,  c.byref(params))
+        else:
+            ret = self.eyex_dll.txCreateGazePointDataBehavior(interactor, c.byref(params))
 
         ret = self.eyex_dll.txReleaseObject(c.byref(interactor))
 
@@ -64,17 +72,33 @@ class EyeXInterface():
 
         self.eyex_dll.txGetAsyncDataContent(async_data, c.byref(event))
 
-        if self.eyex_dll.txGetEventBehavior(event, c.byref(behavior), 1) == tx.TX_RESULT_OK:
-            event_params = tx.TX_GAZEPOINTDATAEVENTPARAMS()
-            if self.eyex_dll.txGetGazePointDataEventParams(behavior, c.byref(event_params)) == tx.TX_RESULT_OK:
-                sample = Sample(int(event_params.GazePointDataMode),
-                                float(event_params.timestamp),
-                                float(event_params.x),
-                                float(event_params.y))
-                self.latest_sample = sample
-                for callback in self.on_event:
-                    callback(sample)
-            self.eyex_dll.txReleaseObject(c.byref(behavior))
+        if self.fixation:
+            if self.eyex_dll.txGetEventBehavior(event, c.byref(behavior),
+                tx.TX_BEHAVIORTYPE_FIXATIONDATA) == tx.TX_RESULT_OK:
+                event_params = tx.TX_FIXATIONDATAEVENTPARAMS()
+                if self.eyex_dll.txGetFixationDataEventParams(behavior, c.byref(event_params)) == tx.TX_RESULT_OK:
+                    sample = SampleFixation(int(event_params.FixationDataMode),
+                                    int(event_params.FixationDataEventType),
+                                    float(event_params.timestamp),
+                                    float(event_params.x),
+                                    float(event_params.y))
+                    self.latest_sample = sample
+                    for callback in self.on_event:
+                        callback(sample)
+                self.eyex_dll.txReleaseObject(c.byref(behavior))
+        else:
+            if self.eyex_dll.txGetEventBehavior(event, c.byref(behavior),
+                tx.TX_BEHAVIORTYPE_GAZEPOINTDATA) == tx.TX_RESULT_OK:
+                event_params = tx.TX_GAZEPOINTDATAEVENTPARAMS()
+                if self.eyex_dll.txGetGazePointDataEventParams(behavior, c.byref(event_params)) == tx.TX_RESULT_OK:
+                    sample = SampleGaze(int(event_params.GazePointDataMode),
+                                    float(event_params.timestamp),
+                                    float(event_params.x),
+                                    float(event_params.y))
+                    self.latest_sample = sample
+                    for callback in self.on_event:
+                        callback(sample)
+                self.eyex_dll.txReleaseObject(c.byref(behavior))
 
         self.eyex_dll.txReleaseObject(c.byref(event))
 
