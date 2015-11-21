@@ -39,7 +39,7 @@ t_length = 120.0        # How long the program waits until it does a timeout sav
 alldata = Queue.Queue() # Holds SampleGaze and SampleFixation data taken from Tobii EyeGo
 funcQ = Queue.Queue()   # Handles 'events' from the three threads marked in Main
 
-# FUNCTION DEFINITION(5) #####################################################################################
+# F UNCTION DEFINITION(5) #####################################################################################
 
 ## 1 ##
 def OpenPrograms():
